@@ -1,5 +1,6 @@
 .idea/
 example/build-*/
+example-api/build-*/
 example/docs/openapi/
 site/node_modules/
 site/.docusaurus/

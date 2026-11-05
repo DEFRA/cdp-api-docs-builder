@@ -8,6 +8,18 @@ if [ "$#" -ne 2 ]; then
   exit 1
 fi
 
+if [ ! -d "$1" ]; then
+  echo "Repository directory does not exist: $1" >&2
+  exit 1
+fi
+
+# The target ends up in an rm -rf path and the base URL, so allow only a
+# single path segment
+if ! [[ "$2" =~ ^[A-Za-z0-9._-]+$ ]] || [[ "$2" == *..* ]]; then
+  echo "Invalid target: '$2' (use letters, digits, '.', '_' or '-')" >&2
+  exit 1
+fi
+
 REPO_DIR="$(cd "$1" && pwd)"
 TARGET="$2"
 BUILDER_ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -20,11 +32,6 @@ SITE_API_DOCS_DIR="${SITE_DIR}/docs/api/reference"
 # the tenant service name explicitly.
 SERVICE_NAME="${SERVICE_NAME:-$(basename "${REPO_DIR}")}"
 BASE_URL="/api/${SERVICE_NAME}/${TARGET}/"
-
-if [ ! -d "${REPO_DIR}" ]; then
-  echo "Repository directory does not exist: ${REPO_DIR}" >&2
-  exit 1
-fi
 
 if [ ! -d "${REPO_DIR}/docs/guides" ]; then
   echo "Expected guides at ${REPO_DIR}/docs/guides" >&2

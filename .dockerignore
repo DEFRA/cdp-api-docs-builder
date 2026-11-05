@@ -2,6 +2,7 @@
 .github
 .idea
 example/build-*
+example-api/build-*
 site/.docusaurus
 site/build
 site/build-*

@@ -1,6 +1,6 @@
-# cdp-api-docs-builder (local demo)
+# cdp-api-docs-builder
 
-Local prototype of the shared API docs builder.
+Shared API docs builder for CDP tenant services, published as the `defradigital/cdp-api-docs-builder` Docker image.
 
 It contains the Docusaurus glue code once (`site/`) and builds docs for a tenant repo by reading:
 
@@ -56,7 +56,7 @@ It logs in with `github-ecr-role`, the role for platform images that aren't tena
 - `DEFRA/cdp-api-docs-builder` in `github_docker_role.repo_list` in `cdp-tf-core/github_oidc.tf`
 - the `defradigital/cdp-api-docs-builder` Docker Hub repository, created once with the "Create DockerHub Repository" workflow in `cdp-tenant-config`
 
-Pull requests build the image and check the `example/` docs, without pushing.
+Pull requests build the image and check both examples without pushing: `example/` (guides only) and `example-api/` (guides and an OpenAPI spec).
 
 ## Site settings (home page front matter)
 
@@ -78,5 +78,6 @@ All optional:
 - `site_title`: site header title (defaults to readable repo name)
 - `site_tagline`: page metadata description (defaults to the spec's `info.title`)
 - `phase`: GOV.UK phase banner tag (defaults to `beta`)
+- `api_reference_redirect_from`: old path (or list of paths) the API reference used to live at, e.g. `/api/uploader/`. Every reference page gets a redirect page at the old path, so existing links keep working
 
 Every guide can also set `sidebar_position`, `sidebar_label`, `title` and `tags`. Tagged pages are listed under `/tags/`.

@@ -1,0 +1,41 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Example API",
+    "version": "1.0.0",
+    "description": "Covers the spec shapes the builder must handle: tagged and untagged operations, path-level parameters and an operation without an operationId."
+  },
+  "paths": {
+    "/files": {
+      "get": {
+        "operationId": "listFiles",
+        "summary": "List files",
+        "tags": ["Files"],
+        "responses": { "200": { "description": "The files" } }
+      },
+      "post": {
+        "summary": "Upload a file",
+        "tags": ["Files"],
+        "responses": { "201": { "description": "Uploaded" } }
+      }
+    },
+    "/files/{id}": {
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
+      "get": {
+        "operationId": "getFile",
+        "summary": "Get a file",
+        "tags": ["Files"],
+        "responses": { "200": { "description": "The file" } }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Health check",
+        "responses": { "200": { "description": "Healthy" } }
+      }
+    }
+  }
+}

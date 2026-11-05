@@ -8,13 +8,14 @@
   },
   "scripts": {
     "gen:api": "mkdir -p docs/api/reference && docusaurus gen-api-docs all",
-    "start": "npm run gen:api && docusaurus start --host 0.0.0.0 --port 3100",
-    "build": "npm run gen:api && docusaurus build",
+    "start": "docusaurus start --host 0.0.0.0 --port 3100",
+    "build": "docusaurus build",
     "serve": "docusaurus serve"
   },
   "dependencies": {
     "@defra/docusaurus-theme-govuk": "github:DEFRA/docusaurus-theme-govuk",
     "@docusaurus/core": "3.10.2",
+    "@docusaurus/plugin-client-redirects": "3.10.2",
     "@docusaurus/plugin-content-docs": "3.10.2",
     "@docusaurus/preset-classic": "3.10.2",
     "@easyops-cn/docusaurus-search-local": "0.48.0",

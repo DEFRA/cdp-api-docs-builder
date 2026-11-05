@@ -16,8 +16,14 @@ jobs:
       - name: Build image
         run: docker build --no-cache --tag cdp-api-docs-builder:pr .
 
-      - name: Check the example docs
+      - name: Check the guides-only example
         run: |
           docker run --rm -e SERVICE_NAME=example \
             -v "$PWD/example:/repo" \
+            cdp-api-docs-builder:pr /repo check
+
+      - name: Check the example with an OpenAPI spec
+        run: |
+          docker run --rm -e SERVICE_NAME=example-api \
+            -v "$PWD/example-api:/repo" \
             cdp-api-docs-builder:pr /repo check

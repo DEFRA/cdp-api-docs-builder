@@ -45,22 +45,29 @@ const routeFromGuidePath = (relativePath) => {
 }
 
 const guidesDir = path.join(__dirname, 'guides')
+// Skips what Docusaurus doesn't publish: _partials, _dirs/ and *.test.md(x)
 const walkGuides = (dir) => {
   if (!fs.existsSync(dir)) return []
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.name.startsWith('_')) return []
     const fullPath = path.join(dir, entry.name)
     if (entry.isDirectory()) return walkGuides(fullPath)
-    return /\.mdx?$/i.test(entry.name) ? [fullPath] : []
+    return /\.mdx?$/i.test(entry.name) && !/\.test\.mdx?$/i.test(entry.name)
+      ? [fullPath]
+      : []
   })
 }
 
-// Site-wide settings (site_title, site_tagline, phase) live in the front
-// matter of the home page: the guide with `slug: /`, or the top-level index.
+// Every guide with its path relative to guides/ and its front matter, read once
+const guides = walkGuides(guidesDir).map((absolutePath) => ({
+  relativePath: path.relative(guidesDir, absolutePath).replace(/\\/g, '/'),
+  data: matter(fs.readFileSync(absolutePath, 'utf8')).data
+}))
+
+// Site-wide settings (site_title, site_tagline, phase, api_reference_redirect_from)
+// live in the front matter of the home page: the guide with `slug: /`, or the
+// top-level index.
 const readSiteSettings = () => {
-  const guides = walkGuides(guidesDir).map((absolutePath) => ({
-    relativePath: path.relative(guidesDir, absolutePath).replace(/\\/g, '/'),
-    data: matter(fs.readFileSync(absolutePath, 'utf8')).data
-  }))
   const home =
     guides.find(({ data }) => data.slug === '/') ||
     guides.find(({ relativePath }) => /^index\.mdx?$/i.test(relativePath))
@@ -76,11 +83,9 @@ const siteTagline =
   `API documentation for ${titleFromServiceName(service)}`
 
 const guideLinks = () => {
-  const files = walkGuides(guidesDir)
-  const links = files.map((absolutePath) => {
-    const relativePath = path.relative(guidesDir, absolutePath).replace(/\\/g, '/')
-    const source = fs.readFileSync(absolutePath, 'utf8')
-    const { data } = matter(source)
+  // Drafts aren't built in production, so a link to one would be broken
+  const published = guides.filter(({ data }) => data.draft !== true)
+  const links = published.map(({ relativePath, data }) => {
     const href = data.slug || routeFromGuidePath(relativePath)
     const basename = path.basename(relativePath).replace(/\.mdx?$/i, '')
     return {
@@ -104,6 +109,19 @@ const guideLinks = () => {
     .map(({ text, href }) => ({ text, href }))
 }
 
+// Same as docusaurus-plugin-openapi-docs: other path keys (parameters,
+// summary, servers, x-*) are not operations and get no page
+const HTTP_METHODS = new Set([
+  'get',
+  'put',
+  'post',
+  'delete',
+  'options',
+  'head',
+  'patch',
+  'trace'
+])
+
 // The GOV.UK theme sidebar allows one level of nesting, so each tag becomes a
 // group and untagged operations stay top level. Order follows the spec.
 const apiReferenceLinks = () => {
@@ -112,9 +130,12 @@ const apiReferenceLinks = () => {
   const groups = new Map()
 
   Object.entries(spec.paths).forEach(([route, methods]) => {
-    Object.entries(methods).forEach(([method, operation]) => {
-      const operationId =
-        operation?.operationId || `${method.toLowerCase()}-${route}`
+    Object.entries(methods ?? {}).forEach(([method, operation]) => {
+      if (!HTTP_METHODS.has(method.toLowerCase())) return
+      // The plugin names the page after operationId, else summary; with
+      // neither the id is empty and the operation has no page of its own
+      const operationId = operation?.operationId || operation?.summary
+      if (!operationId) return
       const link = {
         text: operation?.summary || `${method.toUpperCase()} ${route}`,
         href: `/api/reference/${kebabCase(operationId)}/`
@@ -135,6 +156,14 @@ const apiReferenceLinks = () => {
 
   return links
 }
+
+// Old API reference paths (e.g. /api/uploader/) keep working after a move to
+// /api/reference/: each reference page also gets a redirect page at the old path
+const toBasePath = (route) => `/${route.replace(/^\/+|\/+$/g, '')}/`
+const apiReferenceRedirectFrom = []
+  .concat(settings.api_reference_redirect_from || [])
+  .map(toBasePath)
+  .filter((from) => from !== '/api/reference/')
 
 const docsNavigation = guideLinks()
 const firstGuideHref = docsNavigation.find(({ href }) => href !== '/')?.href || '/'
@@ -192,6 +221,19 @@ if (hasSpec) {
       }
     ]
   )
+  if (apiReferenceRedirectFrom.length > 0) {
+    plugins.push([
+      '@docusaurus/plugin-client-redirects',
+      {
+        createRedirects: (existingPath) =>
+          existingPath.startsWith('/api/reference/')
+            ? apiReferenceRedirectFrom.map((from) =>
+                existingPath.replace('/api/reference/', from)
+              )
+            : undefined
+      }
+    ])
+  }
 }
 
 /** @type {import('@docusaurus/types').Config} */

@@ -12,12 +12,19 @@ permissions:
   id-token: write
   contents: write
 
+# Queue publishes, so two merges close together don't work out the same version
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 env:
   IMAGE_NAME: cdp-api-docs-builder
 
 jobs:
   publish:
     name: Build and publish Docker image
+    # A manual run from another branch would push :latest and a version tag
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
