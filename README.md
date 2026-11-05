@@ -4,11 +4,8 @@ Local prototype of the shared API docs builder.
 
 It contains the Docusaurus glue code once (`site/`) and builds docs for a tenant repo by reading:
 
-- `<repo>/cdp.yml`
 - `<repo>/docs/guides/*.md`
-- `<repo>/docs/openapi/swagger.json` (optional)
-
-If `apiDocs.generate` is set in `cdp.yml`, the command runs in the tenant repo before the build.
+- `<repo>/docs/openapi/swagger.json` (optional, committed by the tenant)
 
 ## Build with local Node
 
@@ -39,17 +36,25 @@ docker run --rm \
   cdp-api-docs-builder:local /repo latest
 ```
 
-## Inputs (`cdp.yml`)
+## Site settings (home page front matter)
+
+Site-wide settings go in the front matter of the home page (`docs/guides/index.md`, or the guide with `slug: /`):
 
 ```yaml
-apiDocs:
-  title: CDP Uploader API Docs
-  generate: npm run docs:openapi
-  phase: beta
+---
+slug: /
+sidebar_label: Overview
+sidebar_position: 1
+site_title: CDP Uploader API Docs
+site_tagline: Upload and virus scan files for CDP services
+phase: live
+---
 ```
 
-Optional keys:
+All optional:
 
-- `title`: site header title (defaults to readable repo name)
-- `generate`: command to produce `docs/openapi/swagger.json`
-- `phase`: GOV.UK phase banner (`alpha`, `beta`, `live`)
+- `site_title`: site header title (defaults to readable repo name)
+- `site_tagline`: page metadata description (defaults to the spec's `info.title`)
+- `phase`: GOV.UK phase banner tag (defaults to `beta`)
+
+Every guide can also set `sidebar_position`, `sidebar_label`, `title` and `tags`. Tagged pages are listed under `/tags/`.

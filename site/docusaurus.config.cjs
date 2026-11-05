@@ -1,7 +1,6 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const matter = require('gray-matter')
-const yaml = require('js-yaml')
 
 const baseUrlFromEnv = process.env.DOCS_BASE_URL || '/'
 const baseUrl = baseUrlFromEnv.startsWith('/')
@@ -12,7 +11,6 @@ const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
 const repository = process.env.GITHUB_REPOSITORY || 'DEFRA/example-service'
 const service = repository.split('/').pop()
 const repoUrl = `https://github.com/${repository}`
-const cdpYmlPath = process.env.CDP_YML || '/repo/cdp.yml'
 
 const specPath = path.join(__dirname, 'openapi/swagger.json')
 const hasSpec = fs.existsSync(specPath)
@@ -23,12 +21,6 @@ const kebabCase = require(
     paths: [require.resolve('docusaurus-plugin-openapi-docs')]
   })
 )
-
-const readCdpSettings = () => {
-  if (!fs.existsSync(cdpYmlPath)) return {}
-  const parsed = yaml.load(fs.readFileSync(cdpYmlPath, 'utf8'))
-  return parsed?.apiDocs ?? {}
-}
 
 const titleFromServiceName = (name) =>
   name
@@ -43,13 +35,6 @@ const routeFromGuidePath = (relativePath) => {
   return withoutIndex ? `/${withoutIndex}/` : '/'
 }
 
-const settings = readCdpSettings()
-const siteTitle = settings.title || titleFromServiceName(service)
-const siteTagline =
-  settings.tagline ||
-  spec?.info?.title ||
-  `API documentation for ${titleFromServiceName(service)}`
-
 const guidesDir = path.join(__dirname, 'guides')
 const walkGuides = (dir) => {
   if (!fs.existsSync(dir)) return []
@@ -59,6 +44,27 @@ const walkGuides = (dir) => {
     return /\.mdx?$/i.test(entry.name) ? [fullPath] : []
   })
 }
+
+// Site-wide settings (site_title, site_tagline, phase) live in the front
+// matter of the home page: the guide with `slug: /`, or the top-level index.
+const readSiteSettings = () => {
+  const guides = walkGuides(guidesDir).map((absolutePath) => ({
+    relativePath: path.relative(guidesDir, absolutePath).replace(/\\/g, '/'),
+    data: matter(fs.readFileSync(absolutePath, 'utf8')).data
+  }))
+  const home =
+    guides.find(({ data }) => data.slug === '/') ||
+    guides.find(({ relativePath }) => /^index\.mdx?$/i.test(relativePath))
+  return home?.data ?? {}
+}
+
+const settings = readSiteSettings()
+const siteTitle = settings.site_title || titleFromServiceName(service)
+const phase = settings.phase || 'beta'
+const siteTagline =
+  settings.site_tagline ||
+  spec?.info?.title ||
+  `API documentation for ${titleFromServiceName(service)}`
 
 const guideLinks = () => {
   const files = walkGuides(guidesDir)
@@ -210,7 +216,8 @@ module.exports = {
         docs: {
           path: 'guides',
           routeBasePath: '/',
-          sidebarPath: require.resolve('./sidebars.js')
+          sidebarPath: require.resolve('./sidebars.js'),
+          onInlineTags: 'ignore'
         },
         blog: false,
         pages: false,
@@ -259,11 +266,16 @@ module.exports = {
             ]
           : [])
       ],
-      phaseBanner: {
-        phase: settings.phase || 'beta',
-        text: 'This documentation is new. Your feedback will help us improve it.',
-        feedbackHref: `${repoUrl}/issues`
-      },
+      // GOV.UK shows a phase banner only for alpha and beta, not live.
+      // The theme appends a link with the text "feedback" after `text`.
+      phaseBanner:
+        phase === 'live'
+          ? undefined
+          : {
+              phase,
+              text: 'This documentation is new. Help us improve it – give your',
+              feedbackHref: `${repoUrl}/issues`
+            },
       footer: {
         meta: [
           { text: service, href: repoUrl },
