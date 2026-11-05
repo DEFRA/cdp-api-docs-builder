@@ -47,7 +47,16 @@ docker run --rm \
 `SERVICE_NAME` is optional outside containers. In CI/container runs, set it so the
 output base URL is `/api/<service>/<target>/` instead of `/api/repo/<target>/`.
 
-The published image name is `defradigital/cdp-api-docs-builder`.
+## Publishing the image
+
+Merging to `main` runs `.github/workflows/publish.yml`, which pushes `defradigital/cdp-api-docs-builder:<version>` and `:latest` to Docker Hub and tags the commit with the version. Tenant workflows pull it from there through `DEFRA/cdp-build-action/api-docs-build`, and can pin a version with `builder-version`.
+
+It logs in with `github-ecr-role`, the role for platform images that aren't tenant services. Needs:
+
+- `DEFRA/cdp-api-docs-builder` in `github_docker_role.repo_list` in `cdp-tf-core/github_oidc.tf`
+- the `defradigital/cdp-api-docs-builder` Docker Hub repository, created once with the "Create DockerHub Repository" workflow in `cdp-tenant-config`
+
+Pull requests build the image and check the `example/` docs, without pushing.
 
 ## Site settings (home page front matter)
 

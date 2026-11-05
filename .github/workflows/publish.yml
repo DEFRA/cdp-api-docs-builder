@@ -1,5 +1,7 @@
 name: Publish builder image
 
+# Pushes defradigital/cdp-api-docs-builder:<version> and :latest to Docker Hub, where
+# tenant workflows pull it from. A platform image, so it uses github-ecr-role, not a tenant build role
 on:
   push:
     branches:
@@ -8,11 +10,10 @@ on:
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 env:
-  AWS_REGION: eu-west-2
-  AWS_ACCOUNT_ID: "094954420758"
+  IMAGE_NAME: cdp-api-docs-builder
 
 jobs:
   publish:
@@ -24,25 +25,37 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Resolve image version
+      - name: Docker Login
+        uses: DEFRA/cdp-build-action/docker-login@main
+        with:
+          iam-role-name: github-ecr-role
+
+      - name: Work out the next version
         id: version
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION="$(git describe --tags --exact-match HEAD 2>/dev/null || true)"
-          if [ -z "${VERSION}" ]; then
-            VERSION="sha-${GITHUB_SHA::7}"
-          fi
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+        uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: false
+          DRY_RUN: true
 
-      - name: Build and publish version tag
-        uses: DEFRA/cdp-build-action/build-dockerhub@main
+      - name: Build and push
+        uses: docker/build-push-action@v7
         with:
-          image-name: cdp-api-docs-builder
-          version: ${{ steps.version.outputs.version }}
+          context: .
+          no-cache: true
+          push: true
+          tags: |
+            defradigital/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.new_tag }}
+            defradigital/${{ env.IMAGE_NAME }}:latest
+          labels: |
+            defra.cdp.git.repo.url=${{ github.server_url }}/${{ github.repository }}
+            defra.cdp.git.repo.name=${{ github.repository }}
+            defra.cdp.build.run_id=${{ github.run_id }}
+            git.hash=${{ github.sha }}
 
-      - name: Build and publish latest tag
-        uses: DEFRA/cdp-build-action/build-dockerhub@main
-        with:
-          image-name: cdp-api-docs-builder
-          version: latest
+      # Tag the commit only once the image exists, so a version tag always has an image
+      - name: Tag the release
+        uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: false
