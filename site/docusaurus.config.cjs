@@ -89,18 +89,36 @@ const guideLinks = () => {
     .map(({ text, href }) => ({ text, href }))
 }
 
+// The GOV.UK theme sidebar allows one level of nesting, so each tag becomes a
+// group and untagged operations stay top level. Order follows the spec.
 const apiReferenceLinks = () => {
   if (!spec?.paths) return []
-  return Object.entries(spec.paths).flatMap(([route, methods]) =>
-    Object.entries(methods).map(([method, operation]) => {
+  const links = []
+  const groups = new Map()
+
+  Object.entries(spec.paths).forEach(([route, methods]) => {
+    Object.entries(methods).forEach(([method, operation]) => {
       const operationId =
         operation?.operationId || `${method.toLowerCase()}-${route}`
-      return {
-        text: `${method.toUpperCase()} ${route}`,
+      const link = {
+        text: operation?.summary || `${method.toUpperCase()} ${route}`,
         href: `/api/reference/${kebabCase(operationId)}/`
       }
+      const tag = operation?.tags?.[0]
+      if (!tag) {
+        links.push(link)
+        return
+      }
+      if (!groups.has(tag)) {
+        const group = { text: tag, href: link.href, items: [] }
+        groups.set(tag, group)
+        links.push(group)
+      }
+      groups.get(tag).items.push(link)
     })
-  )
+  })
+
+  return links
 }
 
 const docsNavigation = guideLinks()
