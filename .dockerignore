@@ -1,0 +1,8 @@
+.git
+.github
+.idea
+example/build-*
+site/.docusaurus
+site/build
+site/build-*
+site/node_modules

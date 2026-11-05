@@ -16,7 +16,9 @@ SITE_GUIDES_DIR="${SITE_DIR}/guides"
 SITE_OPENAPI_DIR="${SITE_DIR}/openapi"
 SITE_API_DOCS_DIR="${SITE_DIR}/docs/api/reference"
 
-SERVICE_NAME="$(basename "${REPO_DIR}")"
+# In containers the checked-out path is often /repo, so allow callers to pass
+# the tenant service name explicitly.
+SERVICE_NAME="${SERVICE_NAME:-$(basename "${REPO_DIR}")}"
 BASE_URL="/api/${SERVICE_NAME}/${TARGET}/"
 
 if [ ! -d "${REPO_DIR}" ]; then

@@ -39,10 +39,15 @@ Run against a tenant repo:
 
 ```bash
 docker run --rm \
-  -v ~/dev/DEFRA/cdp-api-docs-builder:/workspace \
+  -e SERVICE_NAME=cdp-uploader \
   -v ~/dev/DEFRA/cdp-uploader:/repo \
   cdp-api-docs-builder:local /repo latest
 ```
+
+`SERVICE_NAME` is optional outside containers. In CI/container runs, set it so the
+output base URL is `/api/<service>/<target>/` instead of `/api/repo/<target>/`.
+
+The published image name is `defradigital/cdp-api-docs-builder`.
 
 ## Site settings (home page front matter)
 
