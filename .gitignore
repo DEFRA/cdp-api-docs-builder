@@ -1,0 +1,10 @@
+.idea/
+example/build-*/
+example/docs/openapi/
+site/node_modules/
+site/.docusaurus/
+site/build/
+site/build-*/
+site/docs/
+site/guides/
+site/openapi/
