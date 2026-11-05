@@ -4,6 +4,7 @@ set -euo pipefail
 if [ "$#" -ne 2 ]; then
   echo "Usage: ./build.sh <repo-dir> <target>"
   echo "Example: ./build.sh ~/dev/DEFRA/cdp-uploader latest"
+  echo "Target 'check' builds into a temporary folder and keeps nothing (PR dry run)"
   exit 1
 fi
 
@@ -51,15 +52,25 @@ else
   echo "No swagger.json found, building guides-only site"
 fi
 
-OUT_DIR="${REPO_DIR}/build-${TARGET}"
-rm -rf "${OUT_DIR}"
+if [ "${TARGET}" = "check" ]; then
+  OUT_DIR="$(mktemp -d)"
+  trap 'rm -rf "${OUT_DIR}"' EXIT
+else
+  OUT_DIR="${REPO_DIR}/build-${TARGET}"
+  rm -rf "${OUT_DIR}"
+fi
 
 echo "Building docs to ${OUT_DIR}"
+# Errors name the builder's copy of the guides; show the tenant's paths instead
 (
   cd "${SITE_DIR}"
   GITHUB_REPOSITORY="DEFRA/${SERVICE_NAME}" \
   DOCS_BASE_URL="${BASE_URL}" \
   npx docusaurus build --out-dir "${OUT_DIR}"
-)
+) 2>&1 | sed -e "s#${SITE_GUIDES_DIR}/#docs/guides/#g" -e 's#"guides/#"docs/guides/#g'
 
-echo "Done. Built ${OUT_DIR}"
+if [ "${TARGET}" = "check" ]; then
+  echo "Check passed. Nothing kept."
+else
+  echo "Done. Built ${OUT_DIR}"
+fi

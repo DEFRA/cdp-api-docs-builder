@@ -18,6 +18,14 @@ cd ~/dev/DEFRA/cdp-api-docs-builder
 
 Outputs are written to `<repo>/build-<target>`.
 
+## Check a tenant's docs (PR dry run)
+
+```bash
+./build.sh ~/dev/DEFRA/cdp-uploader check
+```
+
+Builds into a temporary folder and keeps nothing. It fails on broken links, broken anchors, broken Markdown links, MDX that doesn't compile, and a `swagger.json` that isn't valid JSON. Real builds use the same rules, so a PR that passes the check won't fail at release.
+
 ## Build with Docker
 
 Build image:

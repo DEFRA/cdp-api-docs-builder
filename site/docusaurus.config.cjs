@@ -14,7 +14,16 @@ const repoUrl = `https://github.com/${repository}`
 
 const specPath = path.join(__dirname, 'openapi/swagger.json')
 const hasSpec = fs.existsSync(specPath)
-const spec = hasSpec ? JSON.parse(fs.readFileSync(specPath, 'utf8')) : null
+const readSpec = () => {
+  try {
+    return JSON.parse(fs.readFileSync(specPath, 'utf8'))
+  } catch (error) {
+    throw new Error(
+      `docs/openapi/swagger.json is not valid JSON: ${error.message}`
+    )
+  }
+}
+const spec = hasSpec ? readSpec() : null
 
 const kebabCase = require(
   require.resolve('lodash/kebabCase', {
@@ -196,9 +205,10 @@ module.exports = {
   trailingSlash: true,
 
   onBrokenLinks: 'throw',
+  onBrokenAnchors: 'throw',
   markdown: {
     hooks: {
-      onBrokenMarkdownLinks: 'warn'
+      onBrokenMarkdownLinks: 'throw'
     }
   },
 
