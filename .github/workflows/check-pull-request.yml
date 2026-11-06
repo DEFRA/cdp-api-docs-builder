@@ -1,0 +1,29 @@
+name: Check Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build image and check the example docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build --no-cache --tag cdp-api-docs-builder:pr .
+
+      - name: Check the guides-only example
+        run: |
+          docker run --rm -e SERVICE_NAME=example \
+            -v "$PWD/example:/repo" \
+            cdp-api-docs-builder:pr /repo check
+
+      - name: Check the example with an OpenAPI spec
+        run: |
+          docker run --rm -e SERVICE_NAME=example-api \
+            -v "$PWD/example-api:/repo" \
+            cdp-api-docs-builder:pr /repo check
