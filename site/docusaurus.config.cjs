@@ -291,6 +291,12 @@ module.exports = {
     docs: {
       versionPersistence: 'localStorage'
     },
+    // Code samples on API reference pages. CDP services are Node.js or .NET
+    languageTabs: [
+      { language: 'curl' },
+      { language: 'nodejs' },
+      { language: 'csharp' }
+    ],
     govuk: {
       header: {
         serviceName: siteTitle,
