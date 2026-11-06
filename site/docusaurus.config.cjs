@@ -291,6 +291,11 @@ module.exports = {
     docs: {
       versionPersistence: 'localStorage'
     },
+    languageTabs: [
+      { language: 'curl' },
+      { language: 'nodejs' },
+      { language: 'csharp' }
+    ],
     govuk: {
       header: {
         serviceName: siteTitle,
