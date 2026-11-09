@@ -47,6 +47,17 @@ docker run --rm \
 `SERVICE_NAME` is optional outside containers. In CI/container runs, set it so the
 output base URL is `/api/<service>/<target>/` instead of `/api/repo/<target>/`.
 
+Set `DOCS_BASE_URL` to override that base URL, for example `/` for `cdp-api-docs-site`, which is
+published at the bucket root:
+
+```bash
+docker run --rm \
+  -e SERVICE_NAME=cdp-api-docs-site \
+  -e DOCS_BASE_URL=/ \
+  -v ~/dev/DEFRA/cdp-api-docs-site:/repo \
+  cdp-api-docs-builder:local /repo site
+```
+
 ## Publishing the image
 
 Merging to `main` runs `.github/workflows/publish.yml`, which pushes `defradigital/cdp-api-docs-builder:<version>` and `:latest` to Docker Hub and tags the commit with the version. Tenant workflows pull it from there through `DEFRA/cdp-build-action/api-docs-build`, and can pin a version with `builder-version`.
@@ -78,6 +89,18 @@ All optional:
 - `site_title`: site header title (defaults to readable repo name)
 - `site_tagline`: page metadata description (defaults to the spec's `info.title`)
 - `phase`: GOV.UK phase banner tag (defaults to `beta`)
+- `description`: home page hero text when there is no OpenAPI spec (the spec's `info.description` wins)
+- `tabs`: header tabs, one per top-level guides folder, with no side menu. Each folder's `index.md`
+  links to its other pages. Replaces the Documentation tab, so pages outside the listed folders
+  are only reachable through links. The build fails if a tab has no `text` or its folder has no `index.md`.
+
+  ```yaml
+  tabs:
+    - text: APIs
+      folder: apis
+    - text: Delivery groups
+      folder: groups
+  ```
 - `api_reference_redirect_from`: old path (or list of paths) the API reference used to live at, e.g. `/api/uploader/`. Every reference page gets a redirect page at the old path, so existing links keep working
 
 Every guide can also set `sidebar_position`, `sidebar_label`, `title` and `tags`. Tagged pages are listed under `/tags/`.

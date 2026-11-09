@@ -31,7 +31,7 @@ SITE_API_DOCS_DIR="${SITE_DIR}/docs/api/reference"
 # In containers the checked-out path is often /repo, so allow callers to pass
 # the tenant service name explicitly.
 SERVICE_NAME="${SERVICE_NAME:-$(basename "${REPO_DIR}")}"
-BASE_URL="/api/${SERVICE_NAME}/${TARGET}/"
+BASE_URL="${DOCS_BASE_URL:-/api/${SERVICE_NAME}/${TARGET}/}"
 
 if [ ! -d "${REPO_DIR}/docs/guides" ]; then
   echo "Expected guides at ${REPO_DIR}/docs/guides" >&2

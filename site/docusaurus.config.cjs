@@ -64,8 +64,8 @@ const guides = walkGuides(guidesDir).map((absolutePath) => ({
   data: matter(fs.readFileSync(absolutePath, 'utf8')).data
 }))
 
-// Site-wide settings (site_title, site_tagline, phase, api_reference_redirect_from)
-// live in the front matter of the home page: the guide with `slug: /`, or the
+// Site-wide settings (site_title, site_tagline, phase, description, tabs,
+// api_reference_redirect_from) live in the front matter of the home page: the guide with `slug: /`, or the
 // top-level index.
 const readSiteSettings = () => {
   const home =
@@ -167,6 +167,25 @@ const apiReferenceRedirectFrom = []
 
 const docsNavigation = guideLinks()
 const firstGuideHref = docsNavigation.find(({ href }) => href !== '/')?.href || '/'
+
+// `tabs` in the home page front matter gives each listed top-level folder its own
+// header tab, with no side menu. Without it, every guide is under one Documentation tab.
+const guideNavigation = () => {
+  if (!Array.isArray(settings.tabs) || settings.tabs.length === 0) {
+    return [{ text: 'Documentation', href: '/', sidebar: docsNavigation }]
+  }
+  // The theme renders tabs with its own Link, so onBrokenLinks never checks them
+  const routes = new Set(docsNavigation.map(({ href }) => href))
+  return settings.tabs.map((tab) => {
+    const href = tab?.folder ? toBasePath(String(tab.folder)) : null
+    if (!tab?.text || !routes.has(href)) {
+      throw new Error(
+        `tabs: each entry needs text and a folder with an index.md, got ${JSON.stringify(tab)}`
+      )
+    }
+    return { text: tab.text, href }
+  })
+}
 
 const themes = [
   [
@@ -305,11 +324,7 @@ module.exports = {
           'https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs'
       },
       navigation: [
-        {
-          text: 'Documentation',
-          href: '/',
-          sidebar: docsNavigation
-        },
+        ...guideNavigation(),
         ...(hasSpec
           ? [
               {
@@ -342,7 +357,9 @@ module.exports = {
       homepage: {
         getStartedHref: firstGuideHref,
         description:
-          spec?.info?.description || `Documentation for ${titleFromServiceName(service)}.`
+          spec?.info?.description ||
+          settings.description ||
+          `Documentation for ${titleFromServiceName(service)}.`
       }
     }
   }
