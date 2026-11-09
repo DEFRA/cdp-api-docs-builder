@@ -52,6 +52,7 @@ published at the bucket root:
 
 ```bash
 docker run --rm \
+  -e SERVICE_NAME=cdp-api-docs-site \
   -e DOCS_BASE_URL=/ \
   -v ~/dev/DEFRA/cdp-api-docs-site:/repo \
   cdp-api-docs-builder:local /repo site
@@ -90,7 +91,8 @@ All optional:
 - `phase`: GOV.UK phase banner tag (defaults to `beta`)
 - `description`: home page hero text when there is no OpenAPI spec (the spec's `info.description` wins)
 - `tabs`: header tabs, one per top-level guides folder, with no side menu. Each folder's `index.md`
-  links to its other pages. Replaces the Documentation tab.
+  links to its other pages. Replaces the Documentation tab, so pages outside the listed folders
+  are only reachable through links. The build fails if a tab has no `text` or its folder has no `index.md`.
 
   ```yaml
   tabs:
