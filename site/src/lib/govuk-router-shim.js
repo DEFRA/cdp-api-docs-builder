@@ -7,10 +7,12 @@
 //    tab's href is then several segments deep, falls through to the prefix
 //    rule, and is highlighted on every page, including API Reference.
 // 2. On the guide pages (/api/overview/ and so on) no tab is highlighted,
-//    because they are not the exact home page.
+//    because they are not the exact home page. The same rule leaves a
+//    one-segment tab such as /apis unhighlighted on its sub-pages.
 //
-// Here the home tab is active for any page under the site's baseUrl that no
-// other tab claims.
+// Here every other tab is active on its own page and the pages below it, and
+// the home tab is active for any page under the site's baseUrl that no other
+// tab claims.
 //
 // Registered by src/plugins/fix-govuk-nav-base-url.cjs.
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
@@ -37,15 +39,15 @@ export const useIsActive = () => {
     .map(({ href }) => withoutTrailingSlash(`${baseUrl}${href}`.replace('//', '/')))
     .filter((href) => href !== baseUrl)
 
+  const pathname = withoutTrailingSlash(location.pathname)
+  const isUnder = (tab) => pathname === tab || pathname.startsWith(`${tab}/`)
+
   return (href, ...rest) => {
     const target = withoutTrailingSlash(href.split(/[?#]/)[0])
-    if (target !== baseUrl) return themeIsActive(href, ...rest)
+    if (target.startsWith('http')) return themeIsActive(href, ...rest)
+    if (target !== baseUrl) return isUnder(target)
 
-    const pathname = withoutTrailingSlash(location.pathname)
-    const inSite =
-      baseUrl === '/' || pathname === baseUrl || pathname.startsWith(`${baseUrl}/`)
-    return (
-      inSite && !otherTabs.some((tab) => themeIsActive(`${tab}/`, ...rest))
-    )
+    const inSite = baseUrl === '/' || isUnder(baseUrl)
+    return inSite && !otherTabs.some(isUnder)
   }
 }

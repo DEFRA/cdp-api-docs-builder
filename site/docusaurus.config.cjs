@@ -168,6 +168,18 @@ const apiReferenceRedirectFrom = []
 const docsNavigation = guideLinks()
 const firstGuideHref = docsNavigation.find(({ href }) => href !== '/')?.href || '/'
 
+// `tabs` in the home page front matter gives each listed top-level folder its own
+// header tab, with no side menu. Without it, every guide is under one Documentation tab.
+const guideNavigation = () => {
+  if (!Array.isArray(settings.tabs) || settings.tabs.length === 0) {
+    return [{ text: 'Documentation', href: '/', sidebar: docsNavigation }]
+  }
+  return settings.tabs.map(({ text, folder }) => ({
+    text,
+    href: toBasePath(String(folder))
+  }))
+}
+
 const themes = [
   [
     require.resolve('@easyops-cn/docusaurus-search-local'),
@@ -305,11 +317,7 @@ module.exports = {
           'https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs'
       },
       navigation: [
-        {
-          text: 'Documentation',
-          href: '/',
-          sidebar: docsNavigation
-        },
+        ...guideNavigation(),
         ...(hasSpec
           ? [
               {
@@ -342,7 +350,9 @@ module.exports = {
       homepage: {
         getStartedHref: firstGuideHref,
         description:
-          spec?.info?.description || `Documentation for ${titleFromServiceName(service)}.`
+          spec?.info?.description ||
+          settings.description ||
+          `Documentation for ${titleFromServiceName(service)}.`
       }
     }
   }
